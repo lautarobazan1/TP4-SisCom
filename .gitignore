@@ -5,3 +5,4 @@
 /practicas/modulo/*.o
 /practicas/modulo/Module.symvers
 /practicas/modulo/modules.order
+/raspberry-qemu/
