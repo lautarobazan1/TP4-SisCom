@@ -1,0 +1,15 @@
+5.15.0-198-generic x86_64
+Archivos de módulos en disco: 6025
+Módulos cargados: 163
+
+dummy
+/lib/modules/5.15.0-198-generic/kernel/drivers/net/dummy.ko
+Estado: no cargado
+
+vcan
+/lib/modules/5.15.0-198-generic/kernel/drivers/net/can/vcan.ko
+Estado: no cargado
+
+ntfs3
+/lib/modules/5.15.0-198-generic/kernel/fs/ntfs3/ntfs3.ko
+Estado: no cargado

@@ -1,0 +1,42 @@
+TP4 · Instrucciones para probar los paquetes y juntar evidencia
+
+1. Guardá estos dos archivos juntos en una carpeta de tu PC:
+   - tp4-hello_1.0-1_amd64.deb
+   - tp4-stack-frame_1.0-1_amd64.deb
+
+2. Abrí una terminal en esa carpeta. En Debian, Ubuntu o un derivado,
+   comprobá la arquitectura y que estén los dos archivos:
+
+   dpkg --print-architecture
+   ls -l ./tp4-hello_1.0-1_amd64.deb ./tp4-stack-frame_1.0-1_amd64.deb
+
+   La arquitectura debe ser amd64. Si aparece otra, avisame qué salió.
+
+3. Instalá los dos paquetes del Desafío 1:
+
+   sudo dpkg -i ./tp4-hello_1.0-1_amd64.deb ./tp4-stack-frame_1.0-1_amd64.deb
+
+   Si falla, mandame el mensaje completo de dpkg.
+
+4. Verificá que quedaron instalados y ejecutá los programas:
+
+   uname -rm
+   dpkg -l tp4-hello tp4-stack-frame
+   tp4-hello
+   tp4-stack-frame
+
+   dpkg debería mostrar "ii" en ambas filas. tp4-hello debería imprimir
+   "Hola, mundo!". En tp4-stack-frame deberían aparecer las entradas
+   1, 2, 3 y las salidas 3, 2, 1. Las direcciones de memoria pueden variar.
+
+   Mandame una captura o el texto de la terminal con esos resultados.
+   Esa es la evidencia de instalación y ejecución en la segunda máquina.
+
+5. Para la actividad 2, guardá los módulos cargados y la versión del kernel
+   desde una terminal de tu PC:
+
+   lsmod > lsmod-companero.txt
+   uname -rm > kernel-companero.txt
+
+   Mandame ambos archivos. Si somos varios, reemplazá "companero" por tu
+   nombre al guardar los archivos para poder identificar cada equipo.
