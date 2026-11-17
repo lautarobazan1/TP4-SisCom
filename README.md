@@ -29,6 +29,17 @@ sudo dmesg | tail -n 15
 - **PC física.** El código reconstruido compiló para `5.15.0-198-generic` y generó un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
 - **Raspberry Pi virtual.** Reinstalamos Raspberry Pi OS Lite y recompilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Evidencia de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Script de arranque](raspberry-qemu-nueva/arrancar.sh)
 
+## Empaquetado con checkinstall (Desafío 1)
+
+`checkinstall` registra los archivos de una instalación como `make install` y genera un paquete que el gestor de la distribución puede instalar, consultar y quitar. Empaquetamos dos programas, con sus ejecutables bajo `/usr/local/bin`. [Manual de checkinstall de Ubuntu](https://manpages.ubuntu.com/manpages/xenial/man8/checkinstall.8.html)
+
+| Paquete | Resultado al ejecutarlo |
+|---|---|
+| `tp4-hello_1.0-1_amd64.deb` | Imprime `Hola, mundo!` |
+| `tp4-stack-frame_1.0-1_amd64.deb` | Muestra las direcciones de sus variables locales y el retorno de las llamadas recursivas en orden inverso |
+
+Lautaro generó ambos paquetes e instaló los dos con `dpkg -i`. Tomás instaló y ejecutó los mismos `.deb` en su PC. En ambos equipos `dpkg -l` mostró los dos paquetes con estado `ii`. [Empaquetado del Hola mundo](EVIDENCIAS/4.png) · [Empaquetado de stack frame](EVIDENCIAS/7.png) · [Prueba de Lautaro](EVIDENCIAS/8.png) · [Prueba de Tomás](EVIDENCIAS/uname%20rm%20tomas.jpeg)
+
 # DESAFIO 2
 
 ## Comparación con `modinfo` (  DESAFIO 2 ACTIVIDAD 1 )
@@ -100,18 +111,8 @@ El programa reserva una región sin permisos con `mmap(..., PROT_NONE, ...)` e i
 
 [Código del experimento](practicas/segfault.c) · [Resultados en la PC de Lautaro](EVIDENCIAS/actividad-7-segfault.txt)
 
-## Empaquetado con checkinstall (Desafío 1 parte 2 )
 
-`checkinstall` registra los archivos de una instalación como `make install` y genera un paquete que el gestor de la distribución puede instalar, consultar y quitar. Empaquetamos dos programas, con sus ejecutables bajo `/usr/local/bin`. [Manual de checkinstall de Ubuntu](https://manpages.ubuntu.com/manpages/xenial/man8/checkinstall.8.html)
-
-| Paquete | Resultado al ejecutarlo |
-|---|---|
-| `tp4-hello_1.0-1_amd64.deb` | Imprime `Hola, mundo!` |
-| `tp4-stack-frame_1.0-1_amd64.deb` | Muestra las direcciones de sus variables locales y el retorno de las llamadas recursivas en orden inverso |
-
-Lautaro generó ambos paquetes e instaló los dos con `dpkg -i`. Tomás instaló y ejecutó los mismos `.deb` en su PC. En ambos equipos `dpkg -l` mostró los dos paquetes con estado `ii`. [Empaquetado del Hola mundo](EVIDENCIAS/4.png) · [Empaquetado de stack frame](EVIDENCIAS/7.png) · [Prueba de Lautaro](EVIDENCIAS/8.png) · [Prueba de Tomás](EVIDENCIAS/uname%20rm%20tomas.jpeg)
-
-## Seguridad del kernel (Desafío 1 y actividades 8, 10 y 11)
+## Seguridad del kernel (Desafío 2 y actividades 8, 10 y 11) (OPCIONAL)
 
 **Firma de módulos y rootkits.** El kernel puede exigir firmas válidas con `CONFIG_MODULE_SIG_FORCE` o `module.sig_enforce=1`. Esto dificulta una vía de entrada de rootkits al kernel. Limitar quién puede cargar módulos y conservar un registro de las cargas son medidas complementarias. `modinfo` permite consultar los metadatos de firma y `scripts/sign-file` permite adjuntar una firma. La prueba práctica de firmar un módulo es opcional (actividad 8). [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
 
