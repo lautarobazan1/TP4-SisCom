@@ -12,11 +12,11 @@
 | Tomás | `x86_64` | `7.0.0-42-generic` | Listado de módulos cargados e instalación y ejecución de ambos paquetes |
 | Raspberry Pi 3B emulada con QEMU | `aarch64` | `6.12.109+rpt-rpi-v8` | Compilación, carga, descarga y comparación de módulos |
 
+Usamos una Raspberry Pi 3B emulada con QEMU. Compilamos el mismo código fuente en la PC física y en la VM con los headers de cada kernel.
 
-- **PC física.** El código reconstruido compiló para `5.15.0-198-generic` y generó un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
-- **Raspberry Pi virtual.** Reinstalamos Raspberry Pi OS Lite y recompilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Evidencia de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Script de arranque](raspberry-qemu-nueva/arrancar.sh)
+## Desafío 1 — Checkinstall y seguridad
 
-## Empaquetado con checkinstall (Desafío 1)
+### Empaquetado e instalación
 
 `checkinstall` registra los archivos de una instalación como `make install` y genera un paquete que el gestor de la distribución puede instalar, consultar y quitar. Empaquetamos dos programas, con sus ejecutables bajo `/usr/local/bin`. [Manual de checkinstall de Ubuntu](https://manpages.ubuntu.com/manpages/xenial/man8/checkinstall.8.html)
 
@@ -25,17 +25,43 @@
 | `tp4-hello_1.0-1_amd64.deb` | Imprime `Hola, mundo!` |
 | `tp4-stack-frame_1.0-1_amd64.deb` | Muestra las direcciones de sus variables locales y el retorno de las llamadas recursivas en orden inverso |
 
-Lautaro generó ambos paquetes e instaló los dos con `dpkg -i`. Tomás instaló y ejecutó los mismos `.deb` en su PC. En ambos equipos `dpkg -l` mostró los dos paquetes con estado `ii`. [Empaquetado del Hola mundo](EVIDENCIAS/4.png) · [Empaquetado de stack frame](EVIDENCIAS/7.png) · [Prueba de Lautaro](EVIDENCIAS/8.png) · [Prueba de Tomás](EVIDENCIAS/uname%20rm%20tomas.jpeg)
+Generamos los dos paquetes en la PC de Lautaro. Después instalamos y ejecutamos los mismos `.deb` en esa PC y en la de Tomás. En ambos equipos `dpkg -l` mostró los dos paquetes con estado `ii`.
 
-# DESAFIO 2
+![Generación del paquete Hola mundo con checkinstall](EVIDENCIAS/desafio-1-paquete-hello.png)
 
-## Comparación con `modinfo` (  DESAFIO 2 ACTIVIDAD 1 )
+![Generación del paquete de stack frame con checkinstall](EVIDENCIAS/desafio-1-paquete-stack-frame.png)
 
-En la Raspberry Pi virtual ejecutamos `modinfo ./mimodulo.ko` y `modinfo bluetooth`. [Salida de modinfo de la VM](EVIDENCIAS/actividad-1-modinfo-raspberry.txt)
+![Instalación y ejecución de ambos paquetes en la PC de Lautaro](EVIDENCIAS/desafio-1-prueba-lautaro.png)
+
+![Instalación y ejecución de ambos paquetes en la PC de Tomás](EVIDENCIAS/desafio-1-prueba-tomas.jpeg)
+
+### Firma de módulos y protección contra rootkits
+
+**Firma de módulos y rootkits.** El kernel puede exigir firmas válidas con `CONFIG_MODULE_SIG_FORCE` o `module.sig_enforce=1`. Esto dificulta una vía de entrada de rootkits al kernel. Limitar quién puede cargar módulos y conservar un registro de las cargas son medidas complementarias. `modinfo` permite consultar los metadatos de firma y `scripts/sign-file` permite adjuntar una firma. [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
+
+## Desafío 2 — Conceptos fundamentales
+
+### Funciones disponibles
+
+Un programa de usuario puede usar la biblioteca estándar de C y pedir servicios al kernel mediante llamadas al sistema. Un módulo usa las interfaces del kernel disponibles para módulos, como `pr_info`, `kmalloc` y `copy_from_user`.
+
+### Espacios de usuario, kernel y datos
+
+El **espacio de usuario** contiene el código y los datos de los procesos, incluidas sus pilas y memoria dinámica. El **espacio del kernel** contiene el núcleo, los módulos y datos internos como buffers y la caché de páginas. El **espacio de datos de un proceso** incluye sus variables globales y estáticas, la pila, el heap y otras regiones de memoria mapeadas. El kernel controla el intercambio de datos entre ambos espacios.
+
+### Archivos de dispositivo y controladores
+
+En `/dev` hay archivos especiales como `/dev/nvme0n1` para almacenamiento y `/dev/null` para una interfaz virtual. Al operar sobre un nodo de dispositivo, el kernel dirige la operación a la implementación correspondiente. Muchos dispositivos exponen sus interfaces mediante otros mecanismos, como las interfaces de red.
+
+## Actividades prácticas
+
+### 1. Comparación con `modinfo`
+
+En la Raspberry Pi virtual consultamos `mimodulo.ko` y `bluetooth` con `/usr/sbin/modinfo`.
 
 | Campo | `mimodulo` | `bluetooth` |
 |---|---|---|
-| Ubicación | `~/module/mimodulo.ko` | `/lib/modules/6.12.109+rpt-rpi-v8/kernel/net/bluetooth/bluetooth.ko.xz` |
+| Ubicación | `~/tp4-modulo/mimodulo.ko` | `/lib/modules/6.12.109+rpt-rpi-v8/kernel/net/bluetooth/bluetooth.ko.xz` |
 | Licencia | GPL | GPL |
 | `intree` | Campo ausente | `Y` |
 | Dependencias | Campo vacío | `ecdh_generic`, `rfkill`, `libaes` |
@@ -45,29 +71,85 @@ En la Raspberry Pi virtual ejecutamos `modinfo ./mimodulo.ko` y `modinfo bluetoo
 
 `intree: Y` indica que `bluetooth` se compiló dentro del árbol del kernel. El aviso de *taint* registrado al cargar `mimodulo` indica que ese módulo se compiló fuera del árbol.
 
-En la PC física, el `vermagic` de ambos módulos corresponde a `5.15.0-198-generic`. El `bluetooth` de ese entorno declara `ecdh_generic` como dependencia y muestra el firmante `Build time autogenerated kernel key`. El módulo propio tiene `depends` vacío y su salida carece del campo `signer`. [Salida de modinfo de la PC física](EVIDENCIAS/actividad-1-modinfo-pc.txt)
+En la PC física, el `vermagic` de ambos módulos corresponde a `5.15.0-198-generic`. El `bluetooth` de ese entorno declara `ecdh_generic` como dependencia y muestra el firmante `Build time autogenerated kernel key`. El módulo propio tiene `depends` vacío y su salida carece del campo `signer`.
 
 El mismo código fuente dio lugar a dos binarios para kernels y arquitecturas diferentes. El texto que imprime el módulo refleja el hostname de cada entorno. El módulo `bluetooth` también difiere entre equipos en sus dependencias declaradas y en los metadatos de firma que muestra `modinfo`.
 
-## Módulos cargados en el grupo (actividad 2)
+### 2. Módulos cargados en el grupo
 
-Los listados registran **163 módulos en Lautaro, 150 en Renata y 201 en Tomás**, con **76 módulos en común**. Por ejemplo, `ideapad_laptop` aparece únicamente en el listado de Lautaro, `amdgpu` en el de Renata y `ntfs3` en el de Tomás. El análisis vincula estas diferencias con la plataforma, el controlador gráfico y el soporte de sistemas de archivos, respectivamente. [Comparación y fuentes](EVIDENCIAS/actividad-2-comparacion.md) · [Tres comparaciones con diff](EVIDENCIAS/actividad-2-diff.txt)
+Cada integrante ejecutó `lsmod` y `uname -rm` en su propia PC. Los tres equipos usan la arquitectura `x86_64` y ejecutan distintas versiones del kernel.
 
-## Módulos disponibles que no están cargados (actividad 3)
+| Integrante | Kernel | Módulos cargados |
+|---|---|---:|
+| [Lautaro](EVIDENCIAS/lsmod-lautaro.txt) | `5.15.0-198-generic` | 163 |
+| [Renata](EVIDENCIAS/lsmod-renata.txt) | `7.0.0-38-generic` | 150 |
+| [Tomás](EVIDENCIAS/lsmod-tomasfaro-ctrl.txt) | `7.0.0-42-generic` | 201 |
 
-En la PC de Lautaro, para el kernel en ejecución encontramos **6025 archivos de módulos en disco** y **163 módulos cargados**. `modinfo -F filename` encontró los archivos de `dummy`, `vcan` y `ntfs3`, y ninguno figuraba en `lsmod` durante la comprobación. [Salida de la prueba](EVIDENCIAS/actividad-3-modulos.txt)
+Las versiones se registraron con `uname -rm`. [Lautaro](EVIDENCIAS/kernel-lautaro.txt) · [Tomás](EVIDENCIAS/kernel-tomasfaro-ctrl.txt).
+
+![Versión del kernel y arquitectura en la PC de Renata](EVIDENCIAS/actividad-2-kernel-renata.jpeg)
+
+Comparamos las salidas originales con `diff -u`. Para el recuento usamos los nombres de la primera columna, de modo que el orden, el tamaño y el contador de uso no afecten los totales.
+
+```bash
+cd EVIDENCIAS
+diff -u lsmod-lautaro.txt lsmod-renata.txt
+diff -u lsmod-lautaro.txt lsmod-tomasfaro-ctrl.txt
+diff -u lsmod-renata.txt lsmod-tomasfaro-ctrl.txt
+```
+
+| Comparación | En ambos | Solo en el primer equipo | Solo en el segundo equipo |
+|---|---:|---:|---:|
+| Lautaro y Renata | 84 | 79 | 66 |
+| Lautaro y Tomás | 119 | 44 | 82 |
+| Renata y Tomás | 98 | 52 | 103 |
+
+Encontramos **76 módulos en común**, entre ellos `bluetooth` y `nvme`. Por ejemplo, `bluetooth` figura en los tres con distintos valores en `Size` y `Used by`.
+
+Estos extractos muestran módulos que aparecen en un solo equipo de cada par.
+
+```diff
+--- lsmod-lautaro.txt
++++ lsmod-renata.txt
++amdgpu              21585920  7
+-ideapad_laptop         28672  0
+
+--- lsmod-lautaro.txt
++++ lsmod-tomasfaro-ctrl.txt
++ntfs3                 356352  1
+-ideapad_laptop         28672  0
+
+--- lsmod-renata.txt
++++ lsmod-tomasfaro-ctrl.txt
++ntfs3                 356352  1
+-amdgpu              21585920  7
+```
+
+- **Lautaro.** Solo encontramos en este equipo `ideapad_laptop`, el controlador de plataforma para Lenovo IdeaPad. Su presencia es coherente con las funciones específicas que Linux maneja en esa familia de equipos. [Controladores de plataforma Lenovo en Linux](https://kernel.googlesource.com/pub/scm/linux/kernel/git/torvalds/linux.git/%2B/8bfab832ad6905ba70e69bad87a78f6d90cce64a/drivers/platform/x86/lenovo/Kconfig)
+- **Renata.** Solo encontramos en este equipo `amdgpu`, un controlador gráfico para hardware AMD. El listado registra el controlador cargado y deja sin identificar el modelo exacto de GPU. [Documentación de AMDGPU del kernel](https://docs.kernel.org/gpu/amdgpu/index.html)
+- **Tomás.** Solo encontramos en este equipo `ntfs3`, el controlador de lectura y escritura para NTFS. Tiene un contador de uso de 1 y su presencia es compatible con el acceso a un volumen NTFS. El listado por sí solo no identifica qué volumen se usó. [Documentación de NTFS3 del kernel](https://docs.kernel.org/filesystems/ntfs3.html)
+
+Los ejemplos muestran cómo influyen el hardware y los sistemas de archivos en los módulos que se cargan. También pueden influir la configuración del kernel y el estado de cada PC al tomar la muestra. `lsmod` refleja los módulos cargados en ese momento.
+
+### 3. Módulos disponibles que no están cargados
+
+En la PC de Lautaro, para el kernel en ejecución encontramos **6025 archivos de módulos en disco** y **163 módulos cargados**. `modinfo -F filename` encontró los archivos de `dummy`, `vcan` y `ntfs3`, y ninguno figuraba en `lsmod` durante la comprobación.
 
 Un dispositivo puede aparecer enumerado en `lspci` o `lsusb` aunque su controlador falte. Sin un controlador que se asocie al dispositivo, sus funciones pueden quedar inaccesibles para el sistema. En el caso de PCI, `lspci -k` permite revisar qué controlador está en uso.
 
-## Relevamiento con hw-probe (actividad 4)
+### 4. Relevamiento con `hw-probe`
 
-**Pendiente.** Ejecutar el relevamiento desde una PC física y agregar al informe la URL pública que devuelva el comando. Puede hacerlo Lautaro en su PC.
+Ejecutamos el relevamiento en la PC física de Lautaro.
 
 ```bash
 sudo -E hw-probe -all -upload -check -decode-acpi
 ```
 
-## Programa de usuario, módulo y espacios de memoria (actividad 5)
+[Resultado del relevamiento en Linux Hardware](https://linux-hardware.org/?probe=3235cc8383)
+
+![Confirmación de la carga del relevamiento y URL del informe de la PC física](EVIDENCIAS/actividad-4-hw-probe.png)
+
+### 5. Diferencia entre un programa y un módulo
 
 | Aspecto | Programa de usuario | Módulo del kernel |
 |---|---|---|
@@ -75,41 +157,80 @@ sudo -E hw-probe -all -upload -check -decode-acpi
 | Funciones | Puede usar libc, por ejemplo `puts`, `malloc` y `fopen`. Las llamadas al sistema solicitan servicios del kernel | Usa las interfaces del kernel disponibles para módulos, por ejemplo `printk`, `kmalloc` y `copy_from_user` |
 | Memoria | Usa el espacio de direcciones virtuales de su proceso | Se ejecuta con privilegios del kernel y accede a sus estructuras |
 
-(ESTO VA EN EL TEORICO DEL PUNTO 2 DEL DESAFIO 2)
-
-El **espacio de usuario** contiene el código y los datos de los procesos, incluidas sus pilas y memoria dinámica. El **espacio del kernel** contiene el núcleo, los módulos y datos internos como buffers y la caché de páginas. El **espacio de datos de un proceso** incluye sus variables globales y estáticas, la pila, el heap y otras regiones de memoria mapeadas. El kernel controla el intercambio de datos entre ambos espacios.
-
-En `/dev` hay archivos especiales como `/dev/nvme0n1` para almacenamiento y `/dev/null` para una interfaz virtual. Al operar sobre un nodo de dispositivo, el kernel dirige la operación a la implementación correspondiente. Muchos dispositivos exponen sus interfaces mediante otros mecanismos, como las interfaces de red.
-
-## Llamadas al sistema del Hola mundo (actividad 6)
+### 6. Llamadas al sistema del Hola mundo
 
 ```bash
 strace -o hello.strace /usr/local/bin/tp4-hello
 ```
 
-`execve` inició el ejecutable. Durante el arranque aparecieron operaciones como `openat` y `mmap` del cargador dinámico. El `puts` del programa terminó en `write(1, "Hola, mundo!\n", 13) = 13`. El descriptor 1 es la salida estándar. `exit_group(0)` registró la finalización del proceso. [Traza completa de la PC de Lautaro](EVIDENCIAS/actividad-6-hello.strace)
+`execve` inició el ejecutable. Durante el arranque vimos operaciones como `openat` y `mmap` del cargador dinámico. El `puts` del programa terminó en `write(1, "Hola, mundo!\n", 13) = 13`. El descriptor 1 es la salida estándar. `exit_group(0)` registró la finalización del proceso.
 
-## Fallo de segmentación (actividad 7)
+Extracto de `strace`:
+
+```text
+write(1, "Hola, mundo!\n", 13)          = 13
+exit_group(0)                           = ?
++++ exited with 0 +++
+```
+
+### 7. Fallo de segmentación
 
 El programa reserva una región sin permisos con `mmap(..., PROT_NONE, ...)` e intenta escribir en ella. La CPU produce una excepción de memoria. El kernel comprueba los permisos de la región y entrega `SIGSEGV` al proceso.
 
 - Con la acción predeterminada, la prueba terminó por la señal 11, que una shell suele representar con estado 139.
 - Con el manejador instalado mediante `sigaction`, el programa escribió un mensaje y terminó voluntariamente con estado 1 usando `_exit`.
 
-[Código del experimento](practicas/segfault.c) · [Resultados en la PC de Lautaro](EVIDENCIAS/actividad-7-segfault.txt)
+[Código del experimento](EVIDENCIAS/practicas/segfault.c)
 
+### 8. Firma de un módulo (opcional)
 
-## Seguridad del kernel (Desafío 2 y actividades 8, 10 y 11) (OPCIONAL)
+Dejamos sin realizar la prueba opcional de firmar y cargar un módulo.
 
-**Firma de módulos y rootkits.** El kernel puede exigir firmas válidas con `CONFIG_MODULE_SIG_FORCE` o `module.sig_enforce=1`. Esto dificulta una vía de entrada de rootkits al kernel. Limitar quién puede cargar módulos y conservar un registro de las cargas son medidas complementarias. `modinfo` permite consultar los metadatos de firma y `scripts/sign-file` permite adjuntar una firma. La prueba práctica de firmar un módulo es opcional (actividad 8). [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
+### 9. Módulo que imprime el nombre del equipo
 
-**Módulo firmado por el grupo en la PC de un compañero.** Si el kernel exige firmas y desconoce la clave pública del grupo, rechaza la carga. Para que la firma sea aceptada, la clave debe formar parte de las claves en las que confía ese kernel. El módulo también debe ser compatible con el kernel del compañero. Este punto es una respuesta teórica (actividad 10). [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
+El módulo lee el nombre del equipo con `utsname()->nodename` y lo escribe en el registro del kernel con `pr_info`. En cada entorno ejecutamos la prueba desde el directorio del módulo. [Código fuente](EVIDENCIAS/practicas/modulo/mimodulo.c) · [Makefile](EVIDENCIAS/practicas/modulo/Makefile)
 
-**Windows, GRUB y Secure Boot.** La actualización de Windows de agosto de 2024 aplicó una política de revocación SBAT que bloqueó componentes antiguos del arranque de Linux. En algunos equipos de arranque dual, Linux dejó de arrancar con Secure Boot activo. Desactivar Secure Boot podía permitir el arranque mientras se resolvía el problema, con la pérdida de la verificación de componentes de arranque. El propósito de Secure Boot es impedir que arranquen componentes alterados, revocados o cuya firma no sea de confianza. [Artículo de Ars Technica de agosto de 2024](https://arstechnica.com/security/2024/08/a-patch-microsoft-spent-2-years-preparing-is-making-a-mess-for-some-linux-users/)
+```bash
+make
+sudo insmod ./mimodulo.ko
+lsmod | grep -w mimodulo
+sudo rmmod mimodulo
+sudo dmesg | grep -F 'mimodulo:' | tail -n 5
+```
 
-## Estado del trabajo en equipo
+- **PC física.** Compilamos para `5.15.0-198-generic` y obtuvimos un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma.
 
-- **Tres PCs para `lsmod`.** Los tres listados ya están en [EVIDENCIAS](EVIDENCIAS/), junto con el análisis y el anexo de diferencias.
-- **Dos máquinas para instalar ambos paquetes.** Las pruebas de Lautaro y Tomás ya están documentadas.
-- **PC física y Raspberry Pi virtual para los módulos.** Las actividades 1 y 9 están documentadas en ambos entornos.
-- **Una PC física para `hw-probe`.** Falta ejecutar la prueba y pegar su URL.
+![Compilación, carga y descarga del módulo en la PC física](EVIDENCIAS/actividad-9-modulo-pc.png)
+- **Raspberry Pi virtual.** En Raspberry Pi OS Lite compilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo.
+
+![Compilación, carga y descarga del módulo dentro de la Raspberry Pi virtual](EVIDENCIAS/actividad-9-modulo-raspberry.png)
+
+#### Compilación cruzada para ARM64
+
+Compilamos `mimodulo-arm64.ko` en la PC `x86_64` con GCC 12 para ARM64 y los headers y `Module.symvers` del kernel `6.12.109+rpt-rpi-v8` de la Raspberry. Pasamos `ARCH=arm64` y `CROSS_COMPILE=aarch64-linux-gnu-` a kbuild. Usamos QEMU en espacio de usuario para ejecutar las herramientas auxiliares de kbuild que venían compiladas para ARM64. `file` identificó el resultado como un ELF `AArch64` y `modinfo` confirmó el `vermagic` del kernel de la Raspberry.
+
+Extracto de la compilación cruzada y la comprobación del archivo:
+
+```text
+Host: 5.15.0-198-generic x86_64
+Compilador: aarch64-linux-gnu-gcc-12 (Ubuntu 12.3.0-1ubuntu1~22.04.3) 12.3.0
+  LD [M]  mimodulo.ko
+file: ELF 64-bit LSB relocatable, ARM aarch64
+vermagic: 6.12.109+rpt-rpi-v8 SMP preempt mod_unload modversions aarch64
+SHA-256: 763b0ebbc699123737c9e7c1099703242ad86a04389213a1245e4997c7a4f61d
+```
+
+- **PC física.** Al ejecutar `insmod` con el módulo ARM64 obtuvimos `Invalid module format`. En `dmesg` apareció `Invalid architecture in ELF header: 183`.
+
+![Rechazo del módulo ARM64 en la PC x86_64](EVIDENCIAS/compilacion-cruzada-rechazo-pc.png)
+- **Raspberry Pi virtual.** Copiamos el mismo `.ko` por SSH y verificamos su SHA-256 antes de cargarlo. `lsmod` mostró `mimodulo` con 12288 bytes y `dmesg` registró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`.
+
+![Validación del SHA-256, carga y descarga del mismo módulo ARM64 en la Raspberry Pi virtual](EVIDENCIAS/compilacion-cruzada-carga-raspberry.png)
+
+### 10. Módulos firmados y Secure Boot
+
+Si el kernel exige firmas y desconoce la clave pública del grupo, rechaza la carga. Para que la firma sea aceptada, la clave debe formar parte de las claves en las que confía ese kernel. El módulo también debe ser compatible con el kernel del compañero. [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
+
+### 11. Windows, GRUB y Secure Boot
+
+La actualización de Windows de agosto de 2024 aplicó una política de revocación SBAT que bloqueó componentes antiguos del arranque de Linux. En algunos equipos de arranque dual, Linux dejó de arrancar con Secure Boot activo. Desactivar Secure Boot podía permitir el arranque mientras se resolvía el problema, con la pérdida de la verificación de componentes de arranque. El propósito de Secure Boot es impedir que arranquen componentes alterados, revocados o cuya firma no sea de confianza. [Artículo de Ars Technica de agosto de 2024](https://arstechnica.com/security/2024/08/a-patch-microsoft-spent-2-years-preparing-is-making-a-mess-for-some-linux-users/)
