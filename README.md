@@ -143,7 +143,7 @@ El programa reserva una región sin permisos con `mmap(..., PROT_NONE, ...)` e i
 - Con la acción predeterminada, la prueba terminó por la señal 11, que una shell suele representar con estado 139.
 - Con el manejador instalado mediante `sigaction`, el programa escribió un mensaje y terminó voluntariamente con estado 1 usando `_exit`.
 
-[Código del experimento](practicas/segfault.c) · [Resultados en la PC de Lautaro](EVIDENCIAS/actividad-7-segfault.txt)
+[Código del experimento](EVIDENCIAS/practicas/segfault.c) · [Resultados en la PC de Lautaro](EVIDENCIAS/actividad-7-segfault.txt)
 
 ### 8. Firma de un módulo (opcional)
 
@@ -151,7 +151,7 @@ Dejamos sin realizar la prueba opcional de firmar y cargar un módulo.
 
 ### 9. Módulo que imprime el nombre del equipo
 
-El módulo lee el nombre del equipo con `utsname()->nodename` y lo escribe en el registro del kernel con `pr_info`. En cada entorno ejecutamos la prueba desde el directorio del módulo. [Código fuente](practicas/modulo/mimodulo.c) · [Makefile](practicas/modulo/Makefile)
+El módulo lee el nombre del equipo con `utsname()->nodename` y lo escribe en el registro del kernel con `pr_info`. En cada entorno ejecutamos la prueba desde el directorio del módulo. [Código fuente](EVIDENCIAS/practicas/modulo/mimodulo.c) · [Makefile](EVIDENCIAS/practicas/modulo/Makefile)
 
 ```bash
 make
@@ -162,7 +162,7 @@ sudo dmesg | grep -F 'mimodulo:' | tail -n 5
 ```
 
 - **PC física.** Compilamos para `5.15.0-198-generic` y obtuvimos un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
-- **Raspberry Pi virtual.** En Raspberry Pi OS Lite compilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Salida de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Captura de carga y descarga](EVIDENCIAS/actividad-9-modulo-raspberry.png) · [Script de arranque](raspberry-qemu-nueva/arrancar.sh)
+- **Raspberry Pi virtual.** En Raspberry Pi OS Lite compilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Salida de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Captura de carga y descarga](EVIDENCIAS/actividad-9-modulo-raspberry.png)
 
 ### 10. Módulos firmados y Secure Boot
 
