@@ -1,2 +1,0 @@
-5.15.0-198-generic x86_64
-aarch64-linux-gnu

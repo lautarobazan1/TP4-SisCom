@@ -1,6 +1,0 @@
-$ /tmp/tp4-actividad7-segfault
-Terminó por SIGSEGV (señal 11, estado de shell 139).
-
-$ /tmp/tp4-actividad7-segfault manejar
-SIGSEGV capturada
-Estado de salida: 1.
