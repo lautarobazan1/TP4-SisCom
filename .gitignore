@@ -1,8 +1,3 @@
-/practicas/modulo/.*.cmd
-/practicas/modulo/*.ko
-/practicas/modulo/*.mod
-/practicas/modulo/*.mod.c
-/practicas/modulo/*.o
-/practicas/modulo/Module.symvers
-/practicas/modulo/modules.order
+/practicas/
 /raspberry-qemu/
+/raspberry-qemu-nueva/
