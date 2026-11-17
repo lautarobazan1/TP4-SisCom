@@ -14,7 +14,7 @@
 
 La Raspberry Pi virtual usó Raspberry Pi OS Lite de 64 bits. Las actividades 1 y 9 se documentan en la PC física y en la VM para comparar sus resultados. Cada entorno compila el mismo código fuente con los headers de su propio kernel. La estructura del informe toma como referencia el trabajo de otro grupo. [README de referencia](https://github.com/catacamargo/TP4)
 
-## Módulo que imprime el nombre del equipo (actividad 9)
+## Módulo que imprime el nombre del equipo (actividad 9) ( NO ES NECESARIO NO ES PARTE DE LAS ACTIVIDADES OBLIGATORIAS)
 
 El módulo lee el nombre del equipo al cargarse con `utsname()->nodename`. En cada entorno, desde el directorio del módulo, los comandos para la prueba son los siguientes. [Código fuente](practicas/modulo/mimodulo.c) · [Makefile](practicas/modulo/Makefile)
 
@@ -29,7 +29,9 @@ sudo dmesg | tail -n 15
 - **PC física.** El código reconstruido compiló para `5.15.0-198-generic` y generó un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
 - **Raspberry Pi virtual.** Reinstalamos Raspberry Pi OS Lite y recompilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Evidencia de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Script de arranque](raspberry-qemu-nueva/arrancar.sh)
 
-## Comparación con `modinfo` (actividad 1)
+# DESAFIO 2
+
+## Comparación con `modinfo` (  DESAFIO 2 ACTIVIDAD 1 )
 
 En la Raspberry Pi virtual ejecutamos `modinfo ./mimodulo.ko` y `modinfo bluetooth`. [Salida de modinfo de la VM](EVIDENCIAS/actividad-1-modinfo-raspberry.txt)
 
@@ -67,13 +69,15 @@ Un dispositivo puede aparecer enumerado en `lspci` o `lsusb` aunque su controlad
 sudo -E hw-probe -all -upload -check -decode-acpi
 ```
 
-## Programa de usuario, módulo y espacios de memoria (actividad 5 y Desafío 2)
+## Programa de usuario, módulo y espacios de memoria (actividad 5)
 
 | Aspecto | Programa de usuario | Módulo del kernel |
 |---|---|---|
 | Ejecución | Corre como proceso y entra por `main` | Se carga en el kernel y registra sus funciones de inicio y salida |
 | Funciones | Puede usar libc, por ejemplo `puts`, `malloc` y `fopen`. Las llamadas al sistema solicitan servicios del kernel | Usa las interfaces del kernel disponibles para módulos, por ejemplo `printk`, `kmalloc` y `copy_from_user` |
 | Memoria | Usa el espacio de direcciones virtuales de su proceso | Se ejecuta con privilegios del kernel y accede a sus estructuras |
+
+(ESTO VA EN EL TEORICO DEL PUNTO 2 DEL DESAFIO 2)
 
 El **espacio de usuario** contiene el código y los datos de los procesos, incluidas sus pilas y memoria dinámica. El **espacio del kernel** contiene el núcleo, los módulos y datos internos como buffers y la caché de páginas. El **espacio de datos de un proceso** incluye sus variables globales y estáticas, la pila, el heap y otras regiones de memoria mapeadas. El kernel controla el intercambio de datos entre ambos espacios.
 
@@ -96,7 +100,7 @@ El programa reserva una región sin permisos con `mmap(..., PROT_NONE, ...)` e i
 
 [Código del experimento](practicas/segfault.c) · [Resultados en la PC de Lautaro](EVIDENCIAS/actividad-7-segfault.txt)
 
-## Empaquetado con checkinstall (Desafío 1)
+## Empaquetado con checkinstall (Desafío 1 parte 2 )
 
 `checkinstall` registra los archivos de una instalación como `make install` y genera un paquete que el gestor de la distribución puede instalar, consultar y quitar. Empaquetamos dos programas, con sus ejecutables bajo `/usr/local/bin`. [Manual de checkinstall de Ubuntu](https://manpages.ubuntu.com/manpages/xenial/man8/checkinstall.8.html)
 
