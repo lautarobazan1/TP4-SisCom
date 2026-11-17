@@ -1,0 +1,12 @@
+5.15.0-198-generic x86_64
+practicas/modulo/mimodulo-arm64.ko: ELF 64-bit LSB relocatable, ARM aarch64, version 1 (SYSV), BuildID[sha1]=ba9cd9196a0a86637cc0df553c381a865f1ad6fb, not stripped
+insmod: ERROR: could not insert module ./practicas/modulo/mimodulo-arm64.ko: Invalid module format
+[   51.176230] hid-generic 0003:3554:FA09.0007: input,hiddev2,hidraw6: USB HID v1.11 Keyboard [Compx 2.4G Wireless Receiver] on usb-0000:00:14.0-1/input1
+[   56.368595] rfkill: input handler disabled
+[ 1905.448977] Non-volatile memory driver v1.3
+[ 1905.852965] st: Version 20160209, fixed bufsize 32768, s/g segs 256
+[ 2960.316776] perf: interrupt took too long (2503 > 2500), lowering kernel.perf_event_max_sample_rate to 79750
+[ 4448.775747] perf: interrupt took too long (3199 > 3128), lowering kernel.perf_event_max_sample_rate to 62500
+[ 4823.712843] audit: type=1326 audit(1794876744.592:95): auid=4294967295 uid=1000 gid=1000 ses=4294967295 subj=unconfined pid=15052 comm="ld-linux.so.2" exe="/usr/lib32/ld-linux.so.2" sig=31 arch=40000003 syscall=45 compat=1 ip=0xf7f4df2b code=0x80000000
+[ 4996.956771] Invalid architecture in ELF header: 183
+763b0ebbc699123737c9e7c1099703242ad86a04389213a1245e4997c7a4f61d  practicas/modulo/mimodulo-arm64.ko

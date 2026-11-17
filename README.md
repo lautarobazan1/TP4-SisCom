@@ -164,6 +164,13 @@ sudo dmesg | grep -F 'mimodulo:' | tail -n 5
 - **PC física.** Compilamos para `5.15.0-198-generic` y obtuvimos un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
 - **Raspberry Pi virtual.** En Raspberry Pi OS Lite compilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Salida de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Captura de carga y descarga](EVIDENCIAS/actividad-9-modulo-raspberry.png)
 
+#### Compilación cruzada para ARM64
+
+Compilamos `mimodulo-arm64.ko` en la PC `x86_64` con GCC 12 para ARM64 y los headers y `Module.symvers` del kernel `6.12.109+rpt-rpi-v8` de la Raspberry. Pasamos `ARCH=arm64` y `CROSS_COMPILE=aarch64-linux-gnu-` a kbuild. Usamos QEMU en espacio de usuario para ejecutar las herramientas auxiliares de kbuild que venían compiladas para ARM64. `file` identificó el resultado como un ELF `AArch64` y `modinfo` confirmó el `vermagic` del kernel de la Raspberry. [Entorno de compilación](EVIDENCIAS/compilacion-cruzada-entorno.txt) · [Headers de la VM](EVIDENCIAS/compilacion-cruzada-headers-raspberry.png) · [Registro de compilación](EVIDENCIAS/compilacion-cruzada-build.txt)
+
+- **PC física.** Al ejecutar `insmod` con el módulo ARM64 obtuvimos `Invalid module format`. En `dmesg` apareció `Invalid architecture in ELF header: 183`. [Registro del rechazo](EVIDENCIAS/compilacion-cruzada-rechazo-pc.txt) · [Captura](EVIDENCIAS/compilacion-cruzada-rechazo-pc.png)
+- **Raspberry Pi virtual.** Copiamos el mismo `.ko` por SSH y verificamos su SHA-256 antes de cargarlo. `lsmod` mostró `mimodulo` con 12288 bytes y `dmesg` registró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. [Captura de la verificación, carga y descarga](EVIDENCIAS/compilacion-cruzada-carga-raspberry.png)
+
 ### 10. Módulos firmados y Secure Boot
 
 Si el kernel exige firmas y desconoce la clave pública del grupo, rechaza la carga. Para que la firma sea aceptada, la clave debe formar parte de las claves en las que confía ese kernel. El módulo también debe ser compatible con el kernel del compañero. [Documentación de firmas de módulos de Linux](https://docs.kernel.org/admin-guide/module-signing.html)
