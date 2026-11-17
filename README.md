@@ -12,19 +12,6 @@
 | Tomás | `x86_64` | `7.0.0-42-generic` | Listado de módulos cargados e instalación y ejecución de ambos paquetes |
 | Raspberry Pi 3B emulada con QEMU | `aarch64` | `6.12.109+rpt-rpi-v8` | Compilación, carga, descarga y comparación de módulos |
 
-La Raspberry Pi virtual usó Raspberry Pi OS Lite de 64 bits. Las actividades 1 y 9 se documentan en la PC física y en la VM para comparar sus resultados. Cada entorno compila el mismo código fuente con los headers de su propio kernel. La estructura del informe toma como referencia el trabajo de otro grupo. [README de referencia](https://github.com/catacamargo/TP4)
-
-## Módulo que imprime el nombre del equipo (actividad 9) ( NO ES NECESARIO NO ES PARTE DE LAS ACTIVIDADES OBLIGATORIAS)
-
-El módulo lee el nombre del equipo al cargarse con `utsname()->nodename`. En cada entorno, desde el directorio del módulo, los comandos para la prueba son los siguientes. [Código fuente](practicas/modulo/mimodulo.c) · [Makefile](practicas/modulo/Makefile)
-
-```bash
-make
-sudo insmod ./mimodulo.ko
-lsmod | grep '^mimodulo '
-sudo rmmod mimodulo
-sudo dmesg | tail -n 15
-```
 
 - **PC física.** El código reconstruido compiló para `5.15.0-198-generic` y generó un `.ko` x86-64. Tras la carga, `lsmod` mostró `mimodulo` con un tamaño de 16384 bytes. El registro del kernel mostró `mimodulo: cargado en lautaro` y luego `mimodulo: descargado del kernel`. El kernel aceptó el módulo y registró avisos de *taint* por su origen externo y por la verificación de firma. [Evidencia de compilación](EVIDENCIAS/actividad-9-compilacion-pc.txt) · [Captura de carga y descarga](EVIDENCIAS/9.png)
 - **Raspberry Pi virtual.** Reinstalamos Raspberry Pi OS Lite y recompilamos el mismo código fuente para `6.12.109+rpt-rpi-v8` en ARM64. `lsmod` mostró `mimodulo` con un tamaño de 12288 bytes. El registro del kernel mostró `mimodulo: cargado en raspberrypi` y `mimodulo: descargado del kernel`. Tras la descarga, `lsmod` dejó de mostrarlo. [Evidencia de la VM](EVIDENCIAS/actividad-9-modulo-raspberry.txt) · [Script de arranque](raspberry-qemu-nueva/arrancar.sh)
